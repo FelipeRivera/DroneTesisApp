@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1083444856742",
+    "firebase_url": "https://dronetesisapp-b92f2.firebaseio.com",
+    "project_id": "dronetesisapp-b92f2",
+    "storage_bucket": "dronetesisapp-b92f2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1083444856742:android:3c69e3e31cf3e87d1ef167",
+        "android_client_info": {
+          "package_name": "com.example.appdrone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1083444856742-jjk5jtoh9goorhaln47g3ccdnc2etekp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.appdrone",
+            "certificate_hash": "fb0f18053440615ef76fcf9b9b36ccb3ebdbde2c"
+          }
+        },
+        {
+          "client_id": "1083444856742-ouo50of0g7lun7cqfa3lkqvc6165eoda.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiZyTYnILuOOAcYSGhPwnsnusgBfBBprU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1083444856742-ouo50of0g7lun7cqfa3lkqvc6165eoda.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

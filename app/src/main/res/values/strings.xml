@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AppDrone</string>
+    <string name="title_activity_auto">AutoActivity</string>
+</resources>
