@@ -2,12 +2,16 @@ package com.example.appdrone.activity;
 
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
@@ -32,9 +36,12 @@ import com.squareup.picasso.Picasso;
 
 import com.example.appdrone.R;
 
+import java.io.ByteArrayOutputStream;
+
 public class PruebaActivity extends Activity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
+    private static final String TAG = "PruebaActivity";
 
     private Button mButtonChooseImage;
     private Button mButtonUpload;
@@ -109,6 +116,12 @@ public class PruebaActivity extends Activity {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK
                 && data != null && data.getData() != null) {
             mImageUri = data.getData();
+            Log.d(TAG, data.getData().getPath());
+            Bitmap image = BitmapFactory.decodeFile(data.getData().getPath());
+            ByteArrayOutputStream byteImage =  new ByteArrayOutputStream();
+            image.compress(Bitmap.CompressFormat.JPEG, 100, byteImage);
+            byte[] byteII = byteImage.toByteArray();
+            String imageB64= Base64.encodeToString(byteII,Base64.DEFAULT);
 
             Picasso.get().load(mImageUri).into(mImageView);
         }
