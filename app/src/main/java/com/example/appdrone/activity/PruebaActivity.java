@@ -6,8 +6,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Base64;
@@ -21,7 +23,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.appdrone.data.Upload;
+//import com.example.appdrone.data.Upload;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseReference;
@@ -37,9 +39,18 @@ import com.squareup.picasso.Picasso;
 import com.example.appdrone.R;
 
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
@@ -58,7 +69,9 @@ public class PruebaActivity extends Activity {
     private EditText mEditTextFileName;
     private ImageView mImageView;
     private ProgressBar mProgressBar;
-
+    private String encodedImage;
+    private JSONObject jsonObject;
+    private JSONObject Response;
     private Uri mImageUri;
 
     private StorageReference mStorageRef;
@@ -126,13 +139,18 @@ public class PruebaActivity extends Activity {
                 && data != null && data.getData() != null) {
             mImageUri = data.getData();
             Log.d(TAG, data.getData().getPath());
-            Bitmap image = BitmapFactory.decodeFile(data.getData().getPath());
-            ByteArrayOutputStream byteImage =  new ByteArrayOutputStream();
-            image.compress(Bitmap.CompressFormat.JPEG, 100, byteImage);
-            byte[] byteII = byteImage.toByteArray();
-            String imageB64= Base64.encodeToString(byteII,Base64.DEFAULT);
-
-            Picasso.get().load(mImageUri).into(mImageView);
+            try {
+                Bitmap image = MediaStore.Images.Media.getBitmap(getContentResolver(), mImageUri);
+                ByteArrayOutputStream byteImage = new ByteArrayOutputStream();
+                image.compress(Bitmap.CompressFormat.JPEG, 100, byteImage);
+                byte[] byteII = byteImage.toByteArray();
+                encodedImage = Base64.encodeToString(byteII, Base64.DEFAULT);
+                new UploadImages().execute();
+                Picasso.get().load(mImageUri).into(mImageView);
+            }
+            catch (IOException e) {
+            e.printStackTrace();
+            }
         }
     }
 
@@ -165,11 +183,11 @@ public class PruebaActivity extends Activity {
                             }, 500);
 
                             Toast.makeText(PruebaActivity.this,"Upload succesful", Toast.LENGTH_LONG).show();
-                            Upload upload = new Upload(mEditTextFileName.getText().toString().trim(),
-                                    mStorageRef.getDownloadUrl().toString());
+                            //Upload upload = new Upload(mEditTextFileName.getText().toString().trim(),
+                                    //mStorageRef.getDownloadUrl().toString());
 
                             String uploadId = mDatabaseRef.push().getKey();
-                            mDatabaseRef.child(uploadId).setValue(upload);
+                           // mDatabaseRef.child(uploadId).setValue(upload);
 
 
                         }
@@ -205,28 +223,72 @@ public class PruebaActivity extends Activity {
 
     public void HTTPPost(byte m[], String nUrl) throws MalformedURLException {
 
-        URL url = new URL("nUrl");
+        URL url = new URL("http://181.63.18.205:8000/onem2m/DroneListenerIPE/drones/DroneX/captures");
         HttpURLConnection client = null;
         try {
+            String imageB64 = Base64.encodeToString(m, Base64.DEFAULT);
+            JSONObject json = new JSONObject();
+
+            json.put("id","Parrot-1");
+            json.put("image",imageB64);
+            json.put("latitude","4.0");
+            json.put("longitude","5.0");
+
+            String data = json.toString();
+
             client = (HttpURLConnection) url.openConnection();
+            client.setDoOutput(true);
+            client.setDoInput(true);
             client.setRequestMethod("POST");
             // por confirmar
-            client.setRequestProperty("key","Value");
-            client.setDoOutput(true);
+            client.setFixedLengthStreamingMode(data.getBytes().length);
+            client.setRequestProperty("Content-Type", "application/vnd.onem2m-res+json");
+
+            OutputStream out = new BufferedOutputStream(client.getOutputStream());
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
+            writer.write(data);
+            Log.d("Vicky", "Data to php = " + data);
+            writer.flush();
+            writer.close();
+            out.close();
+            client.connect();
+
+            InputStream in = new BufferedInputStream(client.getInputStream());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    in, "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            in.close();
+            String result = sb.toString();
+            Log.d("Vicky", "Response from php = " + result);
+            //Response = new JSONObject(result);
+            client.disconnect();
+            /*client.setRequestProperty("id","Parrot-1");
+            client.setRequestProperty("image",imageB64);
+            client.setRequestProperty("latitude","4.0");
+            client.setRequestProperty("longitude","5.0");
+            client.setDoOutput(true);*/
 
 
-            OutputStream outputPost = new BufferedOutputStream(client.getOutputStream());
+           /* OutputStream outputPost = new BufferedOutputStream(client.getOutputStream());
             outputPost.write(m);
             outputPost.flush();
             outputPost.close();
 
 
             client.setFixedLengthStreamingMode(outputPost.toString().getBytes().length);
-            client.setChunkedStreamingMode(0);
+            client.setChunkedStreamingMode(0);*/
 
         } catch(MalformedURLException error) {
 
             //Handles an incorrectly entered URL
+        }
+        catch (JSONException error)
+        {
+
         }
         catch(SocketTimeoutException error) {
 
@@ -243,6 +305,67 @@ public class PruebaActivity extends Activity {
         }
 
 
+    }
+
+    private class UploadImages extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            try {
+                Log.d("APP", "encodedImage = " + encodedImage);
+                jsonObject = new JSONObject();
+                jsonObject.put("id","Parrot-1");
+                jsonObject.put("image",encodedImage);
+                jsonObject.put("latitude","4.0");
+                jsonObject.put("longitude","5.0");
+                String data = jsonObject.toString();
+                String yourURL = "http://186.81.103.30:8000/onem2m/DroneListenerIPE/drones/DroneX/captures";
+                URL url = new URL(yourURL);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoOutput(true);
+                connection.setDoInput(true);
+                connection.setRequestMethod("POST");
+                connection.setFixedLengthStreamingMode(data.getBytes().length);
+                connection.setRequestProperty("Content-Type", "application/vnd.onem2m-res+json");
+                OutputStream out = new BufferedOutputStream(connection.getOutputStream());
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
+                writer.write(data);
+                Log.d("APP", "Data  = " + data);
+                writer.flush();
+                writer.close();
+                out.close();
+                connection.connect();
+
+                InputStream in = new BufferedInputStream(connection.getInputStream());
+                BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        in, "UTF-8"));
+                StringBuilder sb = new StringBuilder();
+                String line = null;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line);
+                }
+                in.close();
+                String result = sb.toString();
+                Log.d("Vicky", "Response from php = " + result);
+                //Response = new JSONObject(result);
+                connection.disconnect();
+            } catch (Exception e) {
+                Log.d("Vicky", "Error Encountered");
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void args) {
+
+        }
     }
 
 
