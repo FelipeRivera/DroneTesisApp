@@ -35,6 +35,7 @@ public class BebopActivity extends AppCompatActivity {
 
     private TextView mBatteryLabel;
     private Button mTakeOffLandBt;
+    private Button mUploade;
     private ImageButton mDownloadBt;
     private ImageView mBatteryImage;
 
@@ -146,6 +147,18 @@ public class BebopActivity extends AppCompatActivity {
                     }
                 });
                 mDownloadProgressDialog.show();
+            }
+        });
+
+        mUploade = (Button) findViewById(R.id.Upload) ;
+        mUploade.setEnabled(false);
+        mUploade.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent =new Intent(BebopActivity.this, PruebaActivity.class);
+                final ARDiscoveryDeviceService service = intent.getParcelableExtra(ReconocimientoActivity.EXTRA_DEVICE_SERVICE);
+                intent.putExtra(ReconocimientoActivity.EXTRA_DEVICE_SERVICE, service);
+                startActivity(intent);
             }
         });
 

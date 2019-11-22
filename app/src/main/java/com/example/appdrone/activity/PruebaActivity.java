@@ -111,7 +111,7 @@ public class PruebaActivity extends Activity {
 
                 }else {
 
-                    uploadFile();
+                    new UploadImages().execute();
                 }
             }
         });
@@ -145,7 +145,6 @@ public class PruebaActivity extends Activity {
                 image.compress(Bitmap.CompressFormat.JPEG, 100, byteImage);
                 byte[] byteII = byteImage.toByteArray();
                 encodedImage = Base64.encodeToString(byteII, Base64.DEFAULT);
-                new UploadImages().execute();
                 Picasso.get().load(mImageUri).into(mImageView);
             }
             catch (IOException e) {
@@ -221,91 +220,6 @@ public class PruebaActivity extends Activity {
     }
 
 
-    public void HTTPPost(byte m[], String nUrl) throws MalformedURLException {
-
-        URL url = new URL("http://181.63.18.205:8000/onem2m/DroneListenerIPE/drones/DroneX/captures");
-        HttpURLConnection client = null;
-        try {
-            String imageB64 = Base64.encodeToString(m, Base64.DEFAULT);
-            JSONObject json = new JSONObject();
-
-            json.put("id","Parrot-1");
-            json.put("image",imageB64);
-            json.put("latitude","4.0");
-            json.put("longitude","5.0");
-
-            String data = json.toString();
-
-            client = (HttpURLConnection) url.openConnection();
-            client.setDoOutput(true);
-            client.setDoInput(true);
-            client.setRequestMethod("POST");
-            // por confirmar
-            client.setFixedLengthStreamingMode(data.getBytes().length);
-            client.setRequestProperty("Content-Type", "application/vnd.onem2m-res+json");
-
-            OutputStream out = new BufferedOutputStream(client.getOutputStream());
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
-            writer.write(data);
-            Log.d("Vicky", "Data to php = " + data);
-            writer.flush();
-            writer.close();
-            out.close();
-            client.connect();
-
-            InputStream in = new BufferedInputStream(client.getInputStream());
-            BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    in, "UTF-8"));
-            StringBuilder sb = new StringBuilder();
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            in.close();
-            String result = sb.toString();
-            Log.d("Vicky", "Response from php = " + result);
-            //Response = new JSONObject(result);
-            client.disconnect();
-            /*client.setRequestProperty("id","Parrot-1");
-            client.setRequestProperty("image",imageB64);
-            client.setRequestProperty("latitude","4.0");
-            client.setRequestProperty("longitude","5.0");
-            client.setDoOutput(true);*/
-
-
-           /* OutputStream outputPost = new BufferedOutputStream(client.getOutputStream());
-            outputPost.write(m);
-            outputPost.flush();
-            outputPost.close();
-
-
-            client.setFixedLengthStreamingMode(outputPost.toString().getBytes().length);
-            client.setChunkedStreamingMode(0);*/
-
-        } catch(MalformedURLException error) {
-
-            //Handles an incorrectly entered URL
-        }
-        catch (JSONException error)
-        {
-
-        }
-        catch(SocketTimeoutException error) {
-
-            //Handles URL access timeout.
-        }
-        catch (IOException error) {
-
-
-            //Handles input and output errors
-
-        } finally {
-            if(client != null) // Make sure the connection is not null.
-                client.disconnect();
-        }
-
-
-    }
 
     private class UploadImages extends AsyncTask<Void, Void, Void> {
 
@@ -318,45 +232,40 @@ public class PruebaActivity extends Activity {
         protected Void doInBackground(Void... params) {
 
             try {
-                Log.d("APP", "encodedImage = " + encodedImage);
-                jsonObject = new JSONObject();
-                jsonObject.put("id","Parrot-1");
-                jsonObject.put("image",encodedImage);
-                jsonObject.put("latitude","4.0");
-                jsonObject.put("longitude","5.0");
-                String data = jsonObject.toString();
-                String yourURL = "http://186.81.103.30:8000/onem2m/DroneListenerIPE/drones/DroneX/captures";
+                //Log.d("APP", "encodedImage = " + encodedImage);
+                JSONObject con = new JSONObject();
+                JSONObject m2m = new JSONObject();
+                JSONObject dataJ = new JSONObject();
+
+                con.put("id","Parrot-1");
+                con.put("image",encodedImage);
+                con.put("latitude","4.0");
+                con.put("longitude","5.0");
+                m2m.put("con",con.toString());
+                m2m.put("cnf","application/json:0");
+                dataJ.put("m2m:cin",m2m);
+                String data = dataJ.toString();
+                Log.d("APP", "encodedImage = " + data);
+                String yourURL = "http://3.16.214.234:8000/onem2m/DroneListenerIPE/drones/DroneX/captures";
                 URL url = new URL(yourURL);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setRequestMethod("POST");
-                connection.setFixedLengthStreamingMode(data.getBytes().length);
                 connection.setRequestProperty("Content-Type", "application/vnd.onem2m-res+json");
-                OutputStream out = new BufferedOutputStream(connection.getOutputStream());
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
-                writer.write(data);
-                Log.d("APP", "Data  = " + data);
-                writer.flush();
-                writer.close();
+                BufferedWriter out =
+                        new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
+                out.write(data);
                 out.close();
+
                 connection.connect();
 
-                InputStream in = new BufferedInputStream(connection.getInputStream());
-                BufferedReader reader = new BufferedReader(new InputStreamReader(
-                        in, "UTF-8"));
-                StringBuilder sb = new StringBuilder();
-                String line = null;
-                while ((line = reader.readLine()) != null) {
-                    sb.append(line);
-                }
-                in.close();
-                String result = sb.toString();
-                Log.d("Vicky", "Response from php = " + result);
-                //Response = new JSONObject(result);
+                Log.d("APP", "Response = " + connection.getResponseCode());
                 connection.disconnect();
+
             } catch (Exception e) {
-                Log.d("Vicky", "Error Encountered");
+                Log.d("APP", "Error Encountered");
                 e.printStackTrace();
             }
             return null;
